@@ -16,8 +16,10 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.consistency.jraft.RaftConsistencyStateMachine;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
+import com.alibaba.nacos.naming.consistency.persistent.jraft.JraftConsistencyServiceImpl;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,9 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Autowired
     private EphemeralConsistencyService ephemeralConsistencyService;
+
+    @Autowired
+    private JraftConsistencyServiceImpl jraftConsistencyService;
 
     @Override
     public void put(String key, Record value) throws NacosException {
@@ -59,7 +64,12 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         if (KeyBuilder.SERVICE_META_KEY_PREFIX.equals(key)) {
             persistentConsistencyService.listen(key, listener);
             ephemeralConsistencyService.listen(key, listener);
+            jraftConsistencyService.listen(key,listener);
             return;
+        }
+
+        if (RaftConsistencyStateMachine.WILDCARD_OBSERVER_KEY.equals(key)) {
+            jraftConsistencyService.listen(key,listener);
         }
 
         mapConsistencyService(key).listen(key, listener);
@@ -76,6 +86,9 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     }
 
     private ConsistencyService mapConsistencyService(String key) {
+        if (KeyBuilder.matchServiceMetaKey(key)) {
+            return jraftConsistencyService;
+        }
         return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
     }
 }

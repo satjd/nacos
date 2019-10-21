@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 /**
@@ -34,6 +35,7 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
+@Primary
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
 
     @Autowired

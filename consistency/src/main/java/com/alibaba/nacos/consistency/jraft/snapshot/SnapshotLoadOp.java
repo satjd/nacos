@@ -8,5 +8,9 @@ import com.alibaba.nacos.consistency.jraft.BizDomain;
  */
 @FunctionalInterface
 public interface SnapshotLoadOp {
+
+    /** 装载业务状态
+     * @param domainObj
+     */
     void onSnapshotDataLoad(BizDomain domainObj);
 }

@@ -10,6 +10,8 @@ import com.alipay.sofa.jraft.entity.PeerId;
 import com.alipay.sofa.jraft.option.NodeOptions;
 import com.alipay.sofa.jraft.rpc.RaftRpcServerFactory;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +24,8 @@ public class RaftConsistencyServer {
     private RaftGroupService      raftGroupService;
     private Node                  node;
     private RaftConsistencyStateMachine fsm;
+
+    private final Logger LOG = LoggerFactory.getLogger(RaftConsistencyServer.class);
 
     public RaftConsistencyServer(final String dataPath, final String groupId, final PeerId serverId,
                                  final NodeOptions nodeOptions) throws IOException {
@@ -58,7 +62,7 @@ public class RaftConsistencyServer {
         return this.node;
     }
 
-    public RaftGroupService RaftGroupService() {
+    public RaftGroupService raftGroupService() {
         return this.raftGroupService;
     }
 
@@ -77,7 +81,17 @@ public class RaftConsistencyServer {
         return response;
     }
 
-    private static RaftConsistencyServer getRaftConsistencyServer(String dataPath, String groupId, String serverIdStr, String initConfStr)
+    public void registerDataObserver(String interestedKey, DataObserver observer) {
+        fsm.addDataObserver(interestedKey,observer);
+        LOG.info("add a listener on key: {}", interestedKey);
+    }
+
+    public void unregisterDataObserver(String interestedKey, DataObserver observer) {
+        fsm.removeDataObserver(interestedKey,observer);
+        LOG.info("remove a listener on key: {}", interestedKey);
+    }
+
+    public static RaftConsistencyServer getRaftConsistencyServer(String dataPath, String groupId, String serverIdStr, String initConfStr)
         throws IOException {
         final NodeOptions nodeOptions = new NodeOptions();
         // 为了测试,调整 snapshot 间隔等参数
@@ -101,7 +115,7 @@ public class RaftConsistencyServer {
 
         // 启动
         final RaftConsistencyServer server = new RaftConsistencyServer(dataPath, groupId, serverId, nodeOptions);
-        System.out.println("Started counter server at port:" + server.getNode().getNodeId().getPeerId().getPort());
+        System.out.println("Started jraft server at port:" + server.getNode().getNodeId().getPeerId().getPort());
 
         return server;
     }

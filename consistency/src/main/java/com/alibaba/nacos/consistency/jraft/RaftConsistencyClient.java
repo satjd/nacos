@@ -10,6 +10,9 @@ import com.alipay.sofa.jraft.rpc.impl.cli.BoltCliClientService;
 import java.io.Serializable;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * @author satjd
+ */
 public class RaftConsistencyClient {
     private final BoltCliClientService cliClientService;
     private final String groupId;
@@ -30,11 +33,12 @@ public class RaftConsistencyClient {
 
     public Object invokeSync(Serializable serializable)
         throws TimeoutException, InterruptedException, RemotingException {
-        if (!RouteTable.getInstance().refreshLeader(cliClientService, groupId, 1000)
+        int timout = 1000;
+        if (!RouteTable.getInstance().refreshLeader(cliClientService, groupId, timout)
             .isOk()) {
             throw new IllegalStateException("Refresh leader failed");
         }
-        RouteTable.getInstance().refreshConfiguration(cliClientService, groupId, 1000);
+        RouteTable.getInstance().refreshConfiguration(cliClientService, groupId, timout);
         final PeerId leader = RouteTable.getInstance().selectLeader(groupId);
 
         return cliClientService.getRpcClient().invokeSync(leader.getEndpoint().toString(),

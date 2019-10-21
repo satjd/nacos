@@ -17,6 +17,7 @@
 package com.alibaba.nacos.consistency.jraft.snapshot;
 
 import com.alibaba.nacos.consistency.jraft.BizDomain;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -73,7 +74,8 @@ public class OperationSnapshotFile {
     public Map<String,BizDomain> load() throws IOException {
         final String s = FileUtils.readFileToString(new File(path));
         if (!StringUtils.isBlank(s)) {
-            return (Map<String,BizDomain>)mapper.readValue(s, Map.class);
+            TypeReference<Map<String,BizDomain>> ref =new TypeReference<Map<String, BizDomain>>() {};
+            return mapper.readValue(s, ref);
         }
         throw new IOException("Fail to load snapshot from " + path + ",content: " + s);
     }

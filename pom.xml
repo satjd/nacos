@@ -519,6 +519,12 @@
                 <artifactId>nacos-example</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-consistency</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <!-- Alibaba libs-->
             <dependency>

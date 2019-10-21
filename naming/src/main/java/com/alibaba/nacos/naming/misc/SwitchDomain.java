@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class SwitchDomain implements Record, Cloneable {
+    private String name;
 
     private List<String> masters;
 
@@ -60,7 +61,7 @@ public class SwitchDomain implements Record, Cloneable {
 
     private long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(2);
 
-    private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
+    private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5000);
 
     private boolean disableAddIP = false;
 
@@ -86,6 +87,8 @@ public class SwitchDomain implements Record, Cloneable {
     private String overriddenServerStatus = null;
 
     private boolean defaultInstanceEphemeral = true;
+
+    private String checksum;
 
     public boolean isEnableAuthentication() {
         return enableAuthentication;
@@ -135,7 +138,7 @@ public class SwitchDomain implements Record, Cloneable {
     // the followings are not implemented
 
     public String getName() {
-        return UtilsAndCommons.SWITCH_DOMAIN_NAME;
+        return name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
 
     public void update(SwitchDomain domain) {
@@ -358,7 +361,7 @@ public class SwitchDomain implements Record, Cloneable {
 
     @Override
     public String getChecksum() {
-        return null;
+        return checksum;
     }
 
     public interface HealthParams {

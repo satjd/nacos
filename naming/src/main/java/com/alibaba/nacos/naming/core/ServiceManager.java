@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.consistency.jraft.RaftConsistencyStateMachine;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -99,6 +100,7 @@ public class ServiceManager implements RecordListener<Service> {
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
             consistencyService.listen(KeyBuilder.SERVICE_META_KEY_PREFIX, this);
+            consistencyService.listen(RaftConsistencyStateMachine.WILDCARD_OBSERVER_KEY,this);
         } catch (NacosException e) {
             Loggers.SRV_LOG.error("listen for service meta change failed!");
         }
@@ -132,7 +134,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     @Override
-    public void onChange(String key, Service service) throws Exception {
+    public void onChange(String key, Service service) {
         try {
             if (service == null) {
                 Loggers.SRV_LOG.warn("received empty push from raft, key: {}", key);

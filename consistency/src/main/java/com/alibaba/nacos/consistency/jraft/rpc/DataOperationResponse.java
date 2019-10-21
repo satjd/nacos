@@ -2,6 +2,9 @@ package com.alibaba.nacos.consistency.jraft.rpc;
 
 import java.io.Serializable;
 
+/**
+ * @author satjd
+ */
 public class DataOperationResponse implements Serializable {
     private static final long serialVersionUID = -5798361749293412747L;
 

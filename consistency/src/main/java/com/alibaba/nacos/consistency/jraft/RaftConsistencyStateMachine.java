@@ -36,8 +36,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -45,17 +47,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author satjd
  */
 public class RaftConsistencyStateMachine extends StateMachineAdapter {
+    public static final String WILDCARD_OBSERVER_KEY = "*";
 
     private static final Logger LOG = LoggerFactory.getLogger(RaftConsistencyStateMachine.class);
 
     private final ConcurrentHashMap<String, BizDomain> bizDomains = new ConcurrentHashMap<>();
 
     /** todo 装载数据 */
-    private final SnapshotLoadOp snapshotLoadOp = domainObj -> {};
+    private final SnapshotLoadOp snapshotLoadOp = d -> {LOG.info("load data: id={}",d.domainId);};
 
     private final ConcurrentHashMap<String, List<DataObserver>> observers = new ConcurrentHashMap<>();
 
-    // private final
     /**
      * Leader term
      */
@@ -83,16 +85,25 @@ public class RaftConsistencyStateMachine extends StateMachineAdapter {
                 try {
                     request = SerializerManager.getSerializer(SerializerManager.Hessian2)
                         .deserialize(data.array(), DataOperationRequest.class.getName());
+                    assert request != null;
                     key = request.getKey();
                 } catch (final CodecException e) {
                     LOG.error("Fail to decode", e);
                 }
             }
 
-            List<DataObserver> observersToNotify = observers.get(key);
+            List<DataObserver> observersToNotify = new LinkedList<>();
+            Optional.ofNullable(observers.get(key)).ifPresent(observersToNotify::addAll);
+            // add listeners on wildcard key.
+            Optional.ofNullable(observers.get(WILDCARD_OBSERVER_KEY)).ifPresent(observersToNotify::addAll);
+
             if (observersToNotify != null) {
                 for (DataObserver dataObserver : observersToNotify) {
                     BizDomain bizDomain = dataObserver.applyOperation(request);
+                    if (bizDomain == null || bizDomain.domainId == null) {
+                        LOG.error("Biz domain invalid. key={}",key);
+                        return;
+                    }
                     bizDomains.put(bizDomain.domainId,bizDomain);
                 }
             }
@@ -109,16 +120,17 @@ public class RaftConsistencyStateMachine extends StateMachineAdapter {
 
     @Override
     public void onSnapshotSave(final SnapshotWriter writer, final Closure done) {
+        String fileName = "data";
         Utils.runInThread(() -> {
-            final OperationSnapshotFile snapshot = new OperationSnapshotFile(writer.getPath() + File.separator + "data");
+            final OperationSnapshotFile snapshot = new OperationSnapshotFile(writer.getPath() + File.separator + fileName);
             if (snapshot.save(bizDomains)) {
-                if (writer.addFile("data")) {
+                if (writer.addFile(fileName)) {
                     done.run(Status.OK());
                 } else {
                     done.run(new Status(RaftError.EIO, "Fail to add file to writer"));
                 }
             } else {
-                done.run(new Status(RaftError.EIO, "Fail to save vipserver snapshot %s", snapshot.getPath()));
+                done.run(new Status(RaftError.EIO, "Fail to save server snapshot %s", snapshot.getPath()));
             }
         });
     }
@@ -134,7 +146,8 @@ public class RaftConsistencyStateMachine extends StateMachineAdapter {
             LOG.warn("Leader is not supposed to load snapshot");
             return false;
         }
-        if (reader.getFileMeta("data") == null) {
+        String fileName = "data";
+        if (reader.getFileMeta(fileName) == null) {
             LOG.error("Fail to find data file in {}", reader.getPath());
             return false;
         }
@@ -164,6 +177,24 @@ public class RaftConsistencyStateMachine extends StateMachineAdapter {
     public void onLeaderStop(final Status status) {
         this.leaderTerm.set(-1);
         super.onLeaderStop(status);
+    }
+
+    public void addDataObserver(String key, DataObserver observer) {
+        observers.putIfAbsent(key, new LinkedList<>());
+        observers.get(key).add(observer);
+    }
+
+    public void removeDataObserver(String key, DataObserver observer) {
+        if (!observers.containsKey(key)) {
+            return;
+        }
+
+        for (DataObserver dataObserver : observers.get(key)) {
+            if (dataObserver == observer) {
+                observers.get(key).remove(observer);
+                break;
+            }
+        }
     }
 
 }
