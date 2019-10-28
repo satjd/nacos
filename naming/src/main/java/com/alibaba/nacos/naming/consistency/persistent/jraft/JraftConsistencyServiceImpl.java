@@ -81,6 +81,10 @@ public class JraftConsistencyServiceImpl implements PersistentConsistencyService
         return sb.toString();
     }
 
+    public String getLeaderAddress() {
+        return client.getLeader();
+    }
+
     @Override
     public void put(String key, Record value) throws NacosException {
         DataOperationRequest request = new DataOperationRequest();
