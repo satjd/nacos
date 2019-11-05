@@ -20,6 +20,7 @@ public class RaftConsistencyClient {
 
     private final BoltCliClientService cliClientService;
     private final String groupId;
+    private final int REFREASH_TIMEOUT_MS = 1000;
 
     public RaftConsistencyClient(String groupId, String confStr)
         throws TimeoutException, InterruptedException {
@@ -37,11 +38,10 @@ public class RaftConsistencyClient {
 
     public Object invokeSync(Serializable serializable)
         throws TimeoutException, InterruptedException, RemotingException {
-        int timout = 1000;
         final PeerId leader;
 
-        RouteTable.getInstance().refreshConfiguration(cliClientService, groupId, timout);
-        if (!RouteTable.getInstance().refreshLeader(cliClientService, groupId, timout)
+        RouteTable.getInstance().refreshConfiguration(cliClientService, groupId, REFREASH_TIMEOUT_MS);
+        if (!RouteTable.getInstance().refreshLeader(cliClientService, groupId, REFREASH_TIMEOUT_MS)
             .isOk()) {
             throw new IllegalStateException("Refresh leader failed");
         } else {
@@ -52,7 +52,12 @@ public class RaftConsistencyClient {
             serializable, 1000);
     }
 
-    public String getLeader() {
+    public String getLeader() throws TimeoutException, InterruptedException {
+        int timeout = 1000;
+        if (!RouteTable.getInstance().refreshLeader(cliClientService, groupId, REFREASH_TIMEOUT_MS)
+            .isOk()) {
+            throw new IllegalStateException("Refresh leader failed");
+        }
         PeerId leader = RouteTable.getInstance().selectLeader(groupId);
         if (leader == null) {
             return "null";

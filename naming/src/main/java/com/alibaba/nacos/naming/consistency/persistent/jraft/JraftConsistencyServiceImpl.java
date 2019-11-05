@@ -81,7 +81,7 @@ public class JraftConsistencyServiceImpl implements PersistentConsistencyService
         return sb.toString();
     }
 
-    public String getLeaderAddress() {
+    public String getLeaderAddress() throws TimeoutException, InterruptedException {
         return client.getLeader();
     }
 
