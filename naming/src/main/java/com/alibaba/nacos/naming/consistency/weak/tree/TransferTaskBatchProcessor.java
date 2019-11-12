@@ -72,6 +72,10 @@ public class TransferTaskBatchProcessor implements Runnable{
         }
     }
 
+    public int getTransferTaskQueueSize() {
+        return taskHolder.size();
+    }
+
     private void sendDatum(Map<TreePeer,List<Datum>> sourceToDatum) throws Exception {
         for (Map.Entry<TreePeer,List<Datum>> entry : sourceToDatum.entrySet()) {
             JSONArray jsonArray = new JSONArray();

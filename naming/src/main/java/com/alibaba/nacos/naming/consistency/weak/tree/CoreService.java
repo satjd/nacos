@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.weak.tree;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -24,6 +25,8 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author satjd
@@ -142,6 +145,15 @@ public class CoreService {
         transferService.transferNext(datum,DatumType.DELETE,source);
 
         Loggers.TREE.info("data deleted, key={}", datum.key);
+    }
+
+    public String generateMetricInfo() {
+        Map<String, String> metricsMap = new HashMap<>(32);
+        metricsMap.put("pendingTransferTasks",Integer.toString(transferService.getPendingTaskCnt()));
+
+        // todo add more metric
+
+        return JSON.toJSONString(metricsMap);
     }
 
     public boolean isInitialized() {

@@ -78,6 +78,10 @@ public class TransferTaskSingleProcessor implements Runnable{
         }
     }
 
+    public int getTransferTaskQueueSize() {
+        return taskHolder.size();
+    }
+
     private void sendDatum(TransferTask task) {
         JSONObject json = new JSONObject();
         json.put("datum", task.datum);

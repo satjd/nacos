@@ -92,6 +92,10 @@ public class TreeBasedConsistencyServiceImpl implements WeakConsistencyService {
         }
     }
 
+    public String metricsInfo() {
+        return coreService.generateMetricInfo();
+    }
+
     @Override
     public Datum get(String key) throws NacosException {
         return datumStoreService.getDatumCache().get(key);

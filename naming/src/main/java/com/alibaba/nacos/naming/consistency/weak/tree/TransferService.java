@@ -60,9 +60,15 @@ public class TransferService {
         transferSingle(datum, type, source);
     }
 
+    public int getPendingTaskCnt() {
+        return transferTaskSingleProcessor.getTransferTaskQueueSize()
+            + transferTaskBatchProcessor.getTransferTaskQueueSize();
+    }
+
     private void transferSingle(Datum datum, DatumType type, TreePeer source) {
         transferTaskSingleProcessor.addTask(new TransferTask(datum,type,source));
     }
+
     private void transferBatch(Datum datum, DatumType type, TreePeer source) {
         transferTaskBatchProcessor.addTask(new TransferTask(datum,type,source));
     }

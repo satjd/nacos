@@ -112,8 +112,6 @@ public class TreeController {
         return "ok";
     }
 
-
-
     @RequestMapping(value = "/datum/onDel", method = RequestMethod.POST)
     public String delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -131,6 +129,12 @@ public class TreeController {
 
         treeBasedConsistencyService.onRemove(datum,source);
         return "ok";
+    }
+
+    @RequestMapping(value = "/metrics", method = RequestMethod.GET)
+    public String metrics(HttpServletRequest request, HttpServletResponse response) throws Exception {
+
+        return treeBasedConsistencyService.metricsInfo();
     }
 
     private static String getAcceptEncoding(HttpServletRequest req) {
