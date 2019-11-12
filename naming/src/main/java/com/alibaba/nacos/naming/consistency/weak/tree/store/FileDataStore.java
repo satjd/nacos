@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.weak.tree;
+package com.alibaba.nacos.naming.consistency.weak.tree.store;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -36,12 +36,12 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Datum store for tree protocol.
+ * Datum store by file.
  *
  * @author lostcharlie
  */
 @Component
-public class TreeDataStore {
+public class FileDataStore {
     private String basePath;
 
     public String getBasePath() {

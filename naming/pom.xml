@@ -36,6 +36,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <sofa.bolt.version>1.5.6</sofa.bolt.version>
         <hessian.version>3.3.6</hessian.version>
+        <rocksdb.jni.version>6.3.6</rocksdb.jni.version>
     </properties>
 
     <dependencies>
@@ -183,6 +184,13 @@
             <groupId>com.alipay.sofa</groupId>
             <artifactId>hessian</artifactId>
             <version>${hessian.version}</version>
+        </dependency>
+
+        <!-- RocksDB -->
+        <dependency>
+            <groupId>org.rocksdb</groupId>
+            <artifactId>rocksdbjni</artifactId>
+            <version>${rocksdb.jni.version}</version>
         </dependency>
     </dependencies>
 

@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.consistency.weak.tree;
 
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.weak.tree.store.RocksDbDataStore;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -43,7 +44,7 @@ public class DatumStoreService {
     private ConcurrentHashMap<String, Long> removedKeysTimestamp = new ConcurrentHashMap<>();
 
     @Autowired
-    TreeDataStore treeDataStore;
+    RocksDbDataStore rocksDbDataStore;
 
     @PostConstruct
     public void init() {
@@ -93,7 +94,7 @@ public class DatumStoreService {
                 datumCache.put(datum.key, datum);
 
                 // 存储到磁盘
-                sinkToFileSystem(datum);
+                sinkToPersistentStorage(datum);
 
                 return true;
             }
@@ -114,7 +115,7 @@ public class DatumStoreService {
             datumCacheMonitor.remove(key);
 
             // 清理磁盘上的文件
-            removeFromFileSystem(key);
+            removeFromPersistentStorage(key);
             Datum d = datumCache.remove(key);
             if (d != null) {
                 removedKeysTimestamp.put(key, d.timestamp.longValue());
@@ -124,14 +125,14 @@ public class DatumStoreService {
         }
     }
 
-    private void sinkToFileSystem(Datum datum) throws Exception {
+    private void sinkToPersistentStorage(Datum datum) throws Exception {
         // sink datum to disk
-        treeDataStore.write(datum);
+        rocksDbDataStore.write(datum);
     }
 
-    private void removeFromFileSystem(String key) {
+    private void removeFromPersistentStorage(String key) {
         // remove file from disk
-        treeDataStore.remove(key);
+        rocksDbDataStore.remove(key);
     }
 
 }
