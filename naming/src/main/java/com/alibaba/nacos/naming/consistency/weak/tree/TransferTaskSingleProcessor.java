@@ -35,6 +35,10 @@ import java.util.concurrent.*;
 @Component
 public class TransferTaskSingleProcessor implements Runnable{
 
+    private static final int INVOKE_TIMEOUT = 60000;
+
+    private static final int INVOKE_MAXIMUM_RETRY_TIMES = 10;
+
     @Autowired
     private ProtocolConfig protocolConfig;
 
@@ -78,6 +82,11 @@ public class TransferTaskSingleProcessor implements Runnable{
         }
     }
 
+    public void processTaskNow(TransferTask task) {
+        // process task synchronously
+        sendDatum(task);
+    }
+
     public int getTransferTaskQueueSize() {
         return taskHolder.size();
     }
@@ -105,9 +114,15 @@ public class TransferTaskSingleProcessor implements Runnable{
                 + UtilsAndCommons.IP_PORT_SPLITER
                 + protocolConfig.getBoltPort();
 
-            if (!clientProxy.invokeSync(addr, msg, 60000)) {
+            int retryCnt = 0;
+            while (!clientProxy.invokeSync(addr, msg, INVOKE_TIMEOUT)) {
                 // if invoke failed, retry this invocation
-                addTask(task);
+                retryCnt++;
+                if (retryCnt >= INVOKE_MAXIMUM_RETRY_TIMES) {
+                    Loggers.TREE.error("Reach maximum retry times! addr:{}",addr);
+                    // TODO bypass invalid node
+                    break;
+                }
             }
         }
     }

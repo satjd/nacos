@@ -52,7 +52,7 @@ public class RocksDbDataStore {
         RocksDB.loadLibrary();
     }
 
-    @Value("${nacos.naming.tree.dataStore.rocksdb.basePath:/tmp/data/nacos/tree/}")
+    @Value("${nacos.naming.tree.dataStore.rocksdb.basePath:data/tree/}")
     private String path;
 
     @Value("${nacos.naming.tree.dataStore.rocksdb.isSync:false}")
@@ -227,6 +227,8 @@ public class RocksDbDataStore {
         final List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
 
         final File dir = new File(this.path);
+        dir.mkdirs();
+
         if (dir.exists() && !dir.isDirectory()) {
             throw new IllegalStateException("Invalid log path, it's a regular file: " + this.path);
         }

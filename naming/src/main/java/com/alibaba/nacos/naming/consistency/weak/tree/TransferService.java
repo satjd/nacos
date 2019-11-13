@@ -66,7 +66,7 @@ public class TransferService {
     }
 
     private void transferSingle(Datum datum, DatumType type, TreePeer source) {
-        transferTaskSingleProcessor.addTask(new TransferTask(datum,type,source));
+        transferTaskSingleProcessor.processTaskNow(new TransferTask(datum,type,source));
     }
 
     private void transferBatch(Datum datum, DatumType type, TreePeer source) {
