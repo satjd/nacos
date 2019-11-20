@@ -113,7 +113,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 @Override
                 public void run() {
                     try {
-                        removeClientIfZombie();
+                        // removeClientIfZombie();
                     } catch (Throwable e) {
                         Loggers.PUSH.warn("[NACOS-PUSH] failed to remove client zombie");
                     }
@@ -316,6 +316,14 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         }
 
         this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
+    }
+
+    public void testServiceChanged() {
+        Service mockService = new Service();
+        mockService.setName("nacos.testsvc");
+        mockService.setNamespaceId("public");
+
+        this.applicationContext.publishEvent(new ServiceChangeEvent(this, mockService));
     }
 
     public boolean canEnablePush(String agent) {

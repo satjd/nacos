@@ -422,6 +422,10 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     public void addOrReplaceService(Service service) throws NacosException {
+
+        // TEST
+        pushService.testServiceChanged();
+
         consistencyService.put(KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName()), service);
     }
 
