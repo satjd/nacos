@@ -46,18 +46,27 @@ public class TransferService {
     void init() {
     }
 
-    public void transferNext(Datum datum, DatumType type) throws Exception {
-        transferNext(datum, type, treePeerSet.getLocal());
+    public void transferNext(Datum datum, DatumType type, boolean isSync) throws Exception {
+        transferNext(datum, type, treePeerSet.getLocal(), isSync);
     }
 
-    public void transferNext(Datum datum, DatumType type, TreePeer source) throws Exception {
+    public void transferNext(Datum datum, DatumType type, TreePeer source, boolean isSync) throws Exception {
         if (protocolConfig.isBatchUpdateEnabled() && type.equals(DatumType.UPDATE)) {
             // 采用聚合更新
             transferBatch(datum, type, source);
             return;
         }
 
-        transferSingle(datum, type, source);
+        // isSync为true, 立刻将通知同步传输出去
+        // 否则放入队列中异步处理
+        if (isSync) {
+            transferSingleSync(datum, type, source);
+        }
+        else {
+            transferSingleAsync(datum, type, source);
+        }
+
+        // todo wait for enough ack messages arrive
     }
 
     public int getPendingTaskCnt() {
@@ -65,8 +74,14 @@ public class TransferService {
             + transferTaskBatchProcessor.getTransferTaskQueueSize();
     }
 
-    private void transferSingle(Datum datum, DatumType type, TreePeer source) {
+    private void transferSingleSync(Datum datum, DatumType type, TreePeer source) {
+        // 同步传输消息
         transferTaskSingleProcessor.processTaskNow(new TransferTask(datum,type,source));
+    }
+
+    private void transferSingleAsync(Datum datum, DatumType type, TreePeer source) {
+        // 放入task队列，异步处理
+        transferTaskSingleProcessor.addTask(new TransferTask(datum,type,source));
     }
 
     private void transferBatch(Datum datum, DatumType type, TreePeer source) {

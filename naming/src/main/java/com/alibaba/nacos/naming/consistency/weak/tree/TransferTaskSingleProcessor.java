@@ -35,7 +35,7 @@ import java.util.concurrent.*;
 @Component
 public class TransferTaskSingleProcessor implements Runnable{
 
-    private static final int INVOKE_TIMEOUT = 60000;
+    private static final int INVOKE_TIMEOUT = 15000;
 
     private static final int INVOKE_MAXIMUM_RETRY_TIMES = 10;
 
