@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
+import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -42,6 +43,10 @@ public class CoreService {
 
     @Autowired
     SubscriberManager subscriberManager;
+
+    /** TEST */
+    @Autowired
+    PushService pushService;
 
     private boolean initialized;
 
@@ -66,8 +71,11 @@ public class CoreService {
         }
 
         // 3 传输消息并通知listener
-        subscriberManager.addTask(key, ApplyAction.CHANGE);
-        // subscriberManager#processNow(key,ApplyAction.CHANGE);
+        // subscriberManager#addTask(key, ApplyAction.CHANGE);
+        subscriberManager.processNow(key,ApplyAction.CHANGE);
+
+        // TEST
+        pushService.testServiceChanged();
 
         transferService.transferNext(d,DatumType.UPDATE, true);
         Loggers.TREE.info("data added/updated, key={}", d.key);
@@ -91,10 +99,13 @@ public class CoreService {
         }
 
         // 3 继续向下传输消息并通知listener
-        subscriberManager.addTask(datum.key,ApplyAction.CHANGE);
-        // subscriberManager#processNow(datum.key,ApplyAction.CHANGE);
+        // subscriberManager#addTask(datum.key,ApplyAction.CHANGE);
+        subscriberManager.processNow(datum.key,ApplyAction.CHANGE);
 
-        transferService.transferNext(datum,DatumType.UPDATE,source, false);
+        //TEST
+        pushService.testServiceChanged();
+
+        transferService.transferNext(datum,DatumType.UPDATE,source, true);
 
         Loggers.TREE.info("data added/updated, key={}", datum.key);
     }
@@ -113,7 +124,7 @@ public class CoreService {
         }
 
         // 3 传输消息并通知listener删除消息
-         subscriberManager.addTask(key,ApplyAction.DELETE);
+        subscriberManager.addTask(key,ApplyAction.DELETE);
         // subscriberManager#processNow(key,ApplyAction.DELETE);
 
         transferService.transferNext(d,DatumType.DELETE, true);

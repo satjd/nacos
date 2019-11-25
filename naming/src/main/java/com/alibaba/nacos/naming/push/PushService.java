@@ -57,7 +57,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
     private static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
 
-    private static final int MAX_RETRY_TIMES = 1;
+    private static final int MAX_RETRY_TIMES = 0;
 
     private static volatile ConcurrentMap<String, Receiver.AckEntry> ackMap
         = new ConcurrentHashMap<String, Receiver.AckEntry>();
@@ -136,7 +136,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         String serviceName = service.getName();
         String namespaceId = service.getNamespaceId();
 
-        Future future = udpSender.schedule(new Runnable() {
+        udpSender.execute(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -149,7 +149,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     Map<String, Object> cache = new HashMap<>(16);
                     long lastRefTime = System.nanoTime();
                     for (PushClient client : clients.values()) {
-                        if (client.zombie()) {
+                        if (/*client.zombie()*/false) {
                             Loggers.PUSH.debug("client is zombie: " + client.toString());
                             clients.remove(client.toString());
                             Loggers.PUSH.debug("client is zombie: " + client.toString());
@@ -181,7 +181,13 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                         Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}",
                             client.getServiceName(), client.getAddrStr(), client.getAgent(), (ackEntry == null ? null : ackEntry.key));
 
-                        udpPush(ackEntry);
+                        // udpPush(ackEntry);
+
+                        // ONLY FOR TEST
+                        int clientCnt = 3000;
+                        for (int i = 1; i <= clientCnt; i++) {
+                            udpSocket.send(ackEntry.origin);
+                        }
                     }
                 } catch (Exception e) {
                     Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
@@ -191,9 +197,12 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 }
 
             }
-        }, 1000, TimeUnit.MILLISECONDS);
+        });
+        /*
+        Future future = xxx.schedule(xxx,
+        delay,1000,milliseconds*/
 
-        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future);
+        /*futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future)*/;
 
     }
 
@@ -320,10 +329,10 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
     public void testServiceChanged() {
         Service mockService = new Service();
-        mockService.setName("nacos.testsvc");
+        mockService.setName("DEFAULT_GROUP@@nacos.testsvc");
         mockService.setNamespaceId("public");
 
-        this.applicationContext.publishEvent(new ServiceChangeEvent(this, mockService));
+        onApplicationEvent(new ServiceChangeEvent(this, mockService));
     }
 
     public boolean canEnablePush(String agent) {
