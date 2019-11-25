@@ -57,7 +57,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
     private static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
 
-    private static final int MAX_RETRY_TIMES = 1;
+    private static final int MAX_RETRY_TIMES = 0;
 
     private static volatile ConcurrentMap<String, Receiver.AckEntry> ackMap
         = new ConcurrentHashMap<String, Receiver.AckEntry>();
@@ -113,7 +113,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 @Override
                 public void run() {
                     try {
-                        removeClientIfZombie();
+                        // removeClientIfZombie();
                     } catch (Throwable e) {
                         Loggers.PUSH.warn("[NACOS-PUSH] failed to remove client zombie");
                     }
@@ -136,12 +136,17 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         String serviceName = service.getName();
         String namespaceId = service.getNamespaceId();
 
-        Future future = udpSender.schedule(new Runnable() {
+        Runnable sendTask = new Runnable() {
             @Override
             public void run() {
                 try {
                     Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
                     ConcurrentMap<String, PushClient> clients = clientMap.get(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+
+                    // TEST
+                    clients = clientMap.get(UtilsAndCommons.assembleFullServiceName("public", "DEFAULT_GROUP@@v发v         nacos.testsvc"));
+                    // TEST
+
                     if (MapUtils.isEmpty(clients)) {
                         return;
                     }
@@ -149,7 +154,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                     Map<String, Object> cache = new HashMap<>(16);
                     long lastRefTime = System.nanoTime();
                     for (PushClient client : clients.values()) {
-                        if (client.zombie()) {
+                        if (/*client.zombie()*/false) {
                             Loggers.PUSH.debug("client is zombie: " + client.toString());
                             clients.remove(client.toString());
                             Loggers.PUSH.debug("client is zombie: " + client.toString());
@@ -181,7 +186,13 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                         Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}",
                             client.getServiceName(), client.getAddrStr(), client.getAgent(), (ackEntry == null ? null : ackEntry.key));
 
-                        udpPush(ackEntry);
+                        // udpPush(ackEntry);
+
+                        // ONLY FOR TEST
+                        int clientCnt = 3000;
+                        for (int i = 1; i <= clientCnt; i++) {
+                            udpSocket.send(ackEntry.origin);
+                        }
                     }
                 } catch (Exception e) {
                     Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
@@ -191,9 +202,14 @@ public class PushService implements ApplicationContextAware, ApplicationListener
                 }
 
             }
-        }, 1000, TimeUnit.MILLISECONDS);
+        };
 
-        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future);
+        // TEST
+        sendTask.run();
+
+        // Future future = udpSender.schedule(sendTask, 1000, TimeUnit.MILLISECONDS);
+
+        // futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future);
 
     }
 
@@ -316,6 +332,11 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         }
 
         this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
+    }
+
+    public void testPush(Service service) {
+
+        onApplicationEvent(new ServiceChangeEvent(this, service));
     }
 
     public boolean canEnablePush(String agent) {

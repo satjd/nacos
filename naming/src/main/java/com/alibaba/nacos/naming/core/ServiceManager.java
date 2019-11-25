@@ -136,11 +136,13 @@ public class ServiceManager implements RecordListener<Service> {
     @Override
     public void onChange(String key, Service service) {
         try {
+            // TEST
+            pushService.testPush(service);
+
             if (service == null) {
                 Loggers.SRV_LOG.warn("received empty push from raft, key: {}", key);
                 return;
             }
-
             if (StringUtils.isBlank(service.getNamespaceId())) {
                 service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
             }
