@@ -29,11 +29,13 @@ import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
+import com.alibaba.nacos.client.config.impl.pushv2.ConfigPushCallback;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.core.pushv2.PushClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -70,6 +72,11 @@ public class NacosConfigService implements ConfigService {
     private String encode;
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
+    /**
+     * new push client
+     */
+    private PushClient pushClient;
+
     public NacosConfigService(Properties properties) throws NacosException {
         ValidatorUtils.checkInitParam(properties);
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
@@ -82,6 +89,10 @@ public class NacosConfigService implements ConfigService {
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
         worker = new ClientWorker(agent, configFilterChainManager, properties);
+
+        pushClient = new PushClient();
+        pushClient.bindPort(9888);
+        pushClient.start();
     }
 
     private void initNamespace(Properties properties) {
@@ -91,7 +102,12 @@ public class NacosConfigService implements ConfigService {
 
     @Override
     public String getConfig(String dataId, String group, long timeoutMs) throws NacosException {
-        return getConfigInner(namespace, dataId, group, timeoutMs);
+        String configContentStr = getConfigInner(namespace, dataId, group, timeoutMs);
+
+        // new push
+        pushClient.listen("config-"+ namespace + dataId+group, new ConfigPushCallback());
+
+        return configContentStr;
     }
 
     @Override
